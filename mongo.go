@@ -48,6 +48,7 @@ func (mp *MongoProvider) Get(id string) (result Information, err error) {
 
 	return
 }
+
 func (mp *MongoProvider) All() []Information {
 	var result []Information
 	all := func(c *mgo.Collection) error {
