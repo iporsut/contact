@@ -28,23 +28,35 @@ func ContactCollection(s *mgo.Session) *mgo.Collection {
 	return s.DB("test").C("contact")
 }
 
-func (mp *MongoProvider) Get(id string) (result Information, err error) {
+type queryFunc func(c *mgo.Collection) error
+
+func doQuery(mp *MongoProvider, query queryFunc) error {
 	s := mp.session.Clone()
+	s.SetMode(mgo.Monotonic, true)
 	defer s.Close()
 	c := ContactCollection(s)
+	return query(c)
+}
 
-	err = c.Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&result)
+func (mp *MongoProvider) Get(id string) (result Information, err error) {
+	get := func(c *mgo.Collection) error {
+		return c.Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&result)
+	}
+
+	err = doQuery(mp, get)
 	err = handleError(err)
 
 	return
 }
 
 func (mp *MongoProvider) All() []Information {
-	s := mp.session.Clone()
-	c := ContactCollection(s)
-
 	var result []Information
-	c.Find(nil).All(&result)
+	all := func(c *mgo.Collection) error {
+		return c.Find(nil).All(&result)
+	}
+
+	doQuery(mp, all)
+
 	return result
 }
 
