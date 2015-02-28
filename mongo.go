@@ -30,8 +30,8 @@ func ContactCollection(s *mgo.Session) *mgo.Collection {
 
 type queryFunc func(c *mgo.Collection) error
 
-func doQuery(mp *MongoProvider, query queryFunc) error {
-	s := mp.session.Clone()
+func doQuery(session *mgo.Session, query queryFunc) error {
+	s := session.Clone()
 	s.SetMode(mgo.Monotonic, true)
 	defer s.Close()
 	c := ContactCollection(s)
@@ -43,7 +43,7 @@ func (mp *MongoProvider) Get(id string) (result Information, err error) {
 		return c.Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&result)
 	}
 
-	err = doQuery(mp, get)
+	err = doQuery(mp.session, get)
 	err = handleError(err)
 
 	return
@@ -55,7 +55,7 @@ func (mp *MongoProvider) All() []Information {
 		return c.Find(nil).All(&result)
 	}
 
-	doQuery(mp, all)
+	doQuery(mp.session, all)
 
 	return result
 }
